@@ -21,27 +21,26 @@ class CrearClientePanel(wx.Panel):
         
         # Campos del formulario con sus etiquetas
         campos = [
-            ("Nombre:", "Ingrese el nombre del cliente"),
-            ("Apellido:", "Ingrese el apellido del cliente"),
-            ("Email:", "Ingrese el email del cliente"),
-            ("Teléfono:", "Ingrese el teléfono del cliente")
+            ("Nombre", "nombre"),
+            ("Apellido", "apellido"),
+            ("Email", "email"),
+            ("Teléfono", "teléfono")
         ]
         
         self.controles = {}
-        for label, hint in campos:
+        for etiqueta, campo_id in campos:
             # Etiqueta
-            lbl = wx.StaticText(form_panel, label=label)
+            lbl = wx.StaticText(form_panel, label=f"{etiqueta}:")
             lbl.SetFont(wx.Font(10, wx.FONTFAMILY_DEFAULT, wx.FONTSTYLE_NORMAL, wx.FONTWEIGHT_NORMAL))
-            
             # Campo de texto
             txt = wx.TextCtrl(form_panel, size=(300, -1))
-            txt.SetHint(hint)  # Placeholder
-            txt.SetName(label.replace(":", ""))  # Nombre para accesibilidad
-            
+            txt.SetHint(f"Ingrese el {etiqueta.lower()}")
+
             form_sizer.Add(lbl, 0, wx.ALIGN_CENTER_VERTICAL | wx.ALL, 5)
             form_sizer.Add(txt, 1, wx.EXPAND | wx.ALL, 5)
-            
-            self.controles[label.lower().replace(":", "")] = txt
+
+            # Guardar el control con la clave correcta
+            self.controles[campo_id] = txt
         
         form_panel.SetSizer(form_sizer)
         main_sizer.Add(form_panel, 0, wx.ALL | wx.CENTER, 20)
@@ -70,12 +69,17 @@ class CrearClientePanel(wx.Panel):
         ]))
         
         self.SetSizer(main_sizer)
-    
+
     def OnGuardar(self, event):
         # Validar campos
         datos = {}
+        # Imprimir para debug
+        print("Contenido de self.controles:", self.controles.keys())
+        # Mapeo directo de las claves que existen en self.controles
         for campo, control in self.controles.items():
             valor = control.GetValue().strip()
+            # Imprimir para debug
+            print(f"Campo original: '{campo}', Valor: '{valor}'")
             if not valor:
                 wx.MessageBox(
                     f"El campo {campo} es obligatorio",
@@ -84,9 +88,23 @@ class CrearClientePanel(wx.Panel):
                 )
                 control.SetFocus()
                 return
-            datos[campo] = valor
-        
-        # Guardar en la base de datos
+            # Limpiar el nombre del campo
+            campo_limpio = campo.lower().replace(':', '').replace('é', 'e')
+            datos[campo_limpio] = valor
+        # Imprimir para debug
+        print("Datos finales a guardar:", datos)
+        # Verificar que tenemos todas las claves necesarias
+        campos_requeridos = ['nombre', 'apellido', 'email', 'telefono']
+        for campo in campos_requeridos:
+            if campo not in datos:
+                wx.MessageBox(
+                    f"Error: Falta el campo {campo}",
+                    "Error de validación",
+                    wx.OK | wx.ICON_ERROR
+                )
+                return
+
+        # Intentar guardar en la base de datos
         if crear_registro(datos):
             wx.MessageBox(
                 "Cliente guardado exitosamente",
@@ -94,17 +112,18 @@ class CrearClientePanel(wx.Panel):
                 wx.OK | wx.ICON_INFORMATION
             )
             self.OnLimpiar(None)
+            self.GetParent().DestroyChildren()
+            self.GetParent().GetParent().Centre()
         else:
             wx.MessageBox(
                 "Error al guardar el cliente",
                 "Error",
                 wx.OK | wx.ICON_ERROR
             )
-    
     def OnLimpiar(self, event):
         for control in self.controles.values():
             control.SetValue("")
         self.controles["nombre"].SetFocus()
 
 def init_crear(parent):
-    return CrearClientePanel(parent)
+    return CrearClientePanel(parent)  

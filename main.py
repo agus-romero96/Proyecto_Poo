@@ -1,4 +1,4 @@
-import wx  # Reemplazamos tkinter por wx
+import wx
 from crear_form import init_crear
 from listar_form import init_listar
 from db import crear_tabla

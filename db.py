@@ -37,24 +37,28 @@ def crear_registro(datos):
              VALUES(?, ?, ?, ?)'''
     
     conn = crear_conexion()
-    if conn:
-        try:
-            cursor = conn.cursor()
-            cursor.execute(sql, (
-                datos['nombre'],
-                datos['apellido'],
-                datos['email'],
-                datos['telefono']
-            ))
-            conn.commit()
-            return True
-        except Error as e:
-            print(f"Error al crear el registro: {e}")
-            return False
-        finally:
-            conn.close()
-    return False
-
+    if conn is None:
+        print("Error: No se pudo establecer conexión con la base de datos")
+        return False
+        
+    try:
+        cursor = conn.cursor()
+        valores = (
+            datos['nombre'],
+            datos['apellido'],
+            datos['email'],
+            datos['telefono']
+        )
+        print(f"Intentando insertar valores: {valores}")  # Debug
+        cursor.execute(sql, valores)
+        conn.commit()
+        print("Registro insertado exitosamente")  # Debug
+        return True
+    except Error as e:
+        print(f"Error detallado al crear el registro: {e}")
+        return False
+    finally:
+        conn.close()
 def obtener_registros():
     """Obtener todos los registros de clientes"""
     sql = '''SELECT * FROM clientes'''
